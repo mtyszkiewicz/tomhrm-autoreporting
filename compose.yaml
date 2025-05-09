@@ -1,0 +1,12 @@
+services:
+  tomhrm-autoreporting:
+    build:
+      dockerfile: Dockerfile
+    container_name: tomhrm-autoreporting
+    volumes:
+      - ./screenshots:/screenshots
+    environment:
+      - TOMHRM_USERNAME
+      - TOMHRM_PASSWORD
+      - TOMHRM_WORKSPACE
+    restart: unless-stopped

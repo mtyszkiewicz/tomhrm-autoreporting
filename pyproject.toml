@@ -1,0 +1,10 @@
+[project]
+name = "tomhrm-autoreporting"
+version = "0.1.0"
+description = "Take a breath, relax and forget about tomhrm."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "playwright>=1.52.0",
+    "schedule>=1.2.2",
+]
