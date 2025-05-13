@@ -12,8 +12,8 @@ from playwright.sync_api import sync_playwright
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    stream=sys.stdout
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    stream=sys.stdout,
 )
 
 
@@ -23,13 +23,14 @@ TOMHRM_TIMESHEET_URL = f"{TOMHRM_BASE_URL}/timesheet"
 
 SCREENSHOTS_DIR = Path(__file__).resolve().parent / "screenshots"
 
+
 def report_work(
     headless: bool,
     username: str,
     password: str,
     workspace: str,
     screenshot_dir: Path,
-    hours_worked: str = "8h"
+    hours_worked: str = "8h",
 ) -> None:
     date_today = date.today()
     logging.info(f"Attempting to log time for {date_today.strftime('%Y-%m-%d')}...")
@@ -53,7 +54,9 @@ def report_work(
             page.click(login_button_selector)
 
             logging.info("Waiting for login to complete and redirect...")
-            page.wait_for_url(f"{TOMHRM_BASE_URL}/**", wait_until="domcontentloaded", timeout=20000)
+            page.wait_for_url(
+                f"{TOMHRM_BASE_URL}/**", wait_until="domcontentloaded", timeout=20000
+            )
 
             logging.info(f"Navigating to timesheet: {TOMHRM_TIMESHEET_URL}")
             page.goto(TOMHRM_TIMESHEET_URL, wait_until="load")
@@ -75,17 +78,23 @@ def report_work(
             for weekday_input_element in weekday_inputs:
                 data_day_format = weekday_input_element.get_attribute("data-dayformat")
                 if data_day_format == date_today_str:
-                    logging.info(f"Found entry for {date_today_str}. Filling with '{hours_worked}'.")
+                    logging.info(
+                        f"Found entry for {date_today_str}. Filling with '{hours_worked}'."
+                    )
                     weekday_input_element.fill(hours_worked)
 
                     save_button = page.get_by_text("Save")
                     save_button.click()
-                    logging.info(f"Successfully reported {hours_worked} for {date_today_str}")
+                    logging.info(
+                        f"Successfully reported {hours_worked} for {date_today_str}"
+                    )
                     found_day = True
                     break
 
             if not found_day:
-                logging.info(f"No entry found for {date_today_str} in the bulk add section.")
+                logging.info(
+                    f"No entry found for {date_today_str} in the bulk add section."
+                )
 
         except PlaywrightTimeoutError as e:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -121,11 +130,11 @@ def main() -> None:
     try:
         username = os.environ["TOMHRM_USERNAME"]
         password = os.environ["TOMHRM_PASSWORD"]
-        workspace = os.environ["TOMHRM_WORKSPACE"]   
+        workspace = os.environ["TOMHRM_WORKSPACE"]
     except KeyError as e:
         logging.error(f"Error: Environment variable {e} not set.")
         return
-    
+
     def job():
         report_work(
             headless=not args.headed,
@@ -133,9 +142,9 @@ def main() -> None:
             password=password,
             workspace=workspace,
             screenshot_dir=screenshot_dir,
-            hours_worked="8h"
+            hours_worked="8h",
         )
-    
+
     if not args.schedule:
         job()
     else:
@@ -150,7 +159,7 @@ def main() -> None:
         schedule.every().thursday.at(report_time).do(job)
         schedule.every().friday.at(report_time).do(job)
 
-        print(f"Scheduled. Next job runs in {schedule.idle_seconds()} seconds.")
+        logging.info(f"Scheduled. Next job runs in {schedule.idle_seconds()} seconds.")
         while True:
             schedule.run_pending()
             time.sleep(1)

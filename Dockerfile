@@ -1,17 +1,17 @@
-FROM python:3.12
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-
-COPY . .
-
-RUN uv venv /opt/venv
-ENV VIRTUAL_ENV=/opt/venv
+FROM python:3.12-slim
 
 ENV PLAYWRIGHT_BROWSERS_PATH=/playwright-browsers
 
-RUN uv pip install --system \
-    --no-cache -r requirements.txt
+WORKDIR /app
 
-RUN playwright install --with-deps firefox \
-    && chmod -Rf 777 $PLAYWRIGHT_BROWSERS_PATH
+COPY pyproject.toml .
 
-CMD python3 main.py --scheduled
+RUN pip install --no-cache-dir . && \
+    pip install --no-cache-dir playwright && \
+    playwright install --with-deps firefox && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY . .
+
+CMD ["python", "main.py", "--schedule"]
