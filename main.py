@@ -62,7 +62,7 @@ def report_work(
             page.goto(TOMHRM_TIMESHEET_URL, wait_until="load")
 
             logging.info("Clicking 'Bulk Add'...")
-            bulk_add_button = page.get_by_text("Bulk Add")
+            bulk_add_button = page.locator("button.bulk-add-button")
             bulk_add_button.wait_for(state="visible")
             bulk_add_button.click()
 
