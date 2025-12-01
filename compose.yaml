@@ -9,4 +9,6 @@ services:
       - TOMHRM_USERNAME
       - TOMHRM_PASSWORD
       - TOMHRM_WORKSPACE
+      - TELEGRAM_BOT_TOKEN
+      - TELEGRAM_CHAT_ID
     restart: unless-stopped

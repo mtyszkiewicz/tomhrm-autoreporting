@@ -7,6 +7,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 import schedule
+from apprise import Apprise
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
 
@@ -24,11 +25,25 @@ TOMHRM_TIMESHEET_URL = f"{TOMHRM_BASE_URL}/timesheet"
 SCREENSHOTS_DIR = Path(__file__).resolve().parent / "screenshots"
 
 
+def get_notifier() -> Apprise:
+    """Initialize notifier from environment variables"""
+    apobj = Apprise()
+
+    # Telegram configuration
+    telegram_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if telegram_token and telegram_chat_id:
+        apobj.add(f"tgram://{telegram_token}/{telegram_chat_id}")
+
+    return apobj
+
+
 def report_work(
     headless: bool,
     username: str,
     password: str,
     workspace: str,
+    notifier: Apprise,
     screenshot_dir: Path,
     hours_worked: str = "8h",
 ) -> None:
@@ -96,21 +111,27 @@ def report_work(
                     f"No entry found for {date_today_str} in the bulk add section."
                 )
 
-        except PlaywrightTimeoutError as e:
+        except (PlaywrightTimeoutError, Exception) as e:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            screenshot_path = screenshot_dir / f"timeout_error_{timestamp}.png"
-            logging.error(f"A timeout occurred: {e}")
-            page.screenshot(path=screenshot_path)
-            logging.info(f"Screenshot saved to {screenshot_path}")
-        except Exception:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            screenshot_path = screenshot_dir / f"unexpected_error_{timestamp}.png"
-            logging.exception("An unexpected error occurred")
+            screenshot_path = screenshot_dir / f"error_{timestamp}.png"
+            logging.exception(f"Error: {e}")
             try:
                 page.screenshot(path=screenshot_path)
                 logging.info(f"Screenshot saved to {screenshot_path}")
-            except Exception as e:
-                logging.error(f"Could not take screenshot: {e}")
+            except Exception as e2:
+                logging.error(f"Could not take screenshot: {e2}")
+
+            if screenshot_path.exists():
+                attachments = str(screenshot_path)
+            else:
+                attachments = None
+
+            notifier.notify(
+                title="tomhrm-autoreporting: job failure",
+                body=f"The job failed with error: {e}",
+                attach=attachments,
+                notify_type="failure",
+            )
         finally:
             logging.info("Closing browser.")
             browser.close()
@@ -135,12 +156,17 @@ def main() -> None:
         logging.error(f"Error: Environment variable {e} not set.")
         return
 
+    notifier = get_notifier()
+    if len(notifier.servers) == 0:
+        logging.warning("No notification channels configured")
+
     def job():
         report_work(
             headless=not args.headed,
             username=username,
             password=password,
             workspace=workspace,
+            notifier=notifier,
             screenshot_dir=screenshot_dir,
             hours_worked="8h",
         )

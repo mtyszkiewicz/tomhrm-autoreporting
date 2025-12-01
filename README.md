@@ -1,83 +1,80 @@
 # tomhrm-autoreporting
 
-Automate daily work time reporting in the tomHRM system.  
-Install once and forget about manual input.
+Browser automation to report 8 hours to your default project every day at 17:00.
 
 ## Limitations
- - No support for project selection
- - Report schedule is hardcoded
+ - No support for project selection (uses default)
+ - Hardcoded schedule (17:00)
  - Only supports username/password authentication
 
-Feel free to fork the repo or submit a pull request if you’d like to add these or other features!
+*Pull requests to address these limitations are welcome.*
 
 ## Quick Start (Docker)
-1. Clone the repository:
-```sh
+1. **Clone the repository:**
+```bash
 git clone https://github.com/mtyszkiewicz/tomhrm-autoreporting.git
 cd tomhrm-autoreporting
 ```
-2. Create a `.env` file in the root directory with your credentials:
-```sh
+2. **Configure credentials:**
+Create a `.env` file in the root directory:
+```.env
 TOMHRM_USERNAME=your@email.com
 TOMHRM_PASSWORD=yourpassword
 TOMHRM_WORKSPACE=your-workspace-name
 ```
-3. Run the app:
-```sh
-docker compose up
+3. **Run:**
+```bash
+docker compose up -d
 ```
 
-## Advanced Usage & Development
+## Notifications
+The script uses [Apprise](https://pypi.org/project/apprise/) to notify you on failures (e.g., unexpected 2FA or layout changes).
 
-Use this setup if you want to run the script manually, modify the code, or contribute.
+To enable **Telegram** notifications, add these to your `.env` file:
+```.env
+TELEGRAM_BOT_TOKEN=yourbottoken
+TELEGRAM_CHAT_ID=111222333444
+```
 
-1. Install dependencies
+## Local Development
 
-Depending on your environment:
+Use this setup to run the script manually or contribute code.
+
+1. **Install Dependencies**
+
+Using uv:
 ```bash
-# Using uv
 uv sync
-playwright install firefox  # Or your browser engine of choice
+playwright install firefox
 ```
+
+Using poetry:
 ```bash
-# Using Poetry
 poetry install
 playwright install firefox
 ```
+
+2. **Set Environment Variables**
+
+Export these manually or use [direnv](https://direnv.net/):
 ```bash
-# Using pip
-pip install schedule playwright
-playwright install firefox
+export TOMHRM_USERNAME="your@email.com"
+export TOMHRM_PASSWORD="yourpassword"
+export TOMHRM_WORKSPACE="your-workspace-name"  
 ```
 
-2. Set environment variables
+3. **Usage**
 
-You can export them manually, or use a tool like [direnv](https://direnv.net/) to automate this.
 ```bash
-#!/usr/bin/env bash
-export TOMHRM_USERNAME=""
-export TOMHRM_PASSWORD=""
-export TOMHRM_WORKSPACE=""
-```
-
-3. Run the script
-
-**Run once immediately:**
-```bash
+# Run once immediately
 python3 main.py
-```
 
-**Run with browser visible (headed mode):**
-```bash
+# Run with browser visible (debug mode)
 python3 main.py --headed
-```
 
-**Run on a schedule (uses hardcoded timing):**
-```bash
+# Run on schedule (loop forever)
 python3 main.py --schedule
-```
 
-**Save screenshots on error:**
-```bash
+# Save screenshots on error
 python3 main.py --screenshot-dir ./screenshots
 ```
